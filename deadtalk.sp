@@ -1,17 +1,17 @@
 #include <sourcemod>
 #include <sdktools>
-#include <sdktools_voice.inc>
 
-#define VERSION "0.0.1"
+#define VERSION "0.2.0"
 
-#define DEBUG "if(GetConVarBool(Cvar_Debug)) dbg_print"
+//Helper debug printer; Ex: DEBUG("Hello."); == "DEBUG (Deadtalk Plugin): Hello." in console
+//#define DEBUG "if(GetConVarBool(Cvar_Debug)) dbg_print"
 
 float CALLOUT_TIME = 5.0; //Easy change how long before a dead player is put in Deadtalk
 
-new Handle:Cvar_Deadtalk = INVALID_HANDLE;
-new Handle:Cvar_Debug = INVALID_HANDLE;
+Handle Cvar_Deadtalk = INVALID_HANDLE;
+Handle Cvar_Debug = INVALID_HANDLE;
 
-public Plugin:myinfo =
+public Plugin myinfo =
 {
     name = "Bazooka's Deadtalk Plugin",
     description = "Plugin that enables the deadtalk function. Dead players can talk to and hear all other dead players, while also hearing their team; live players do not hear dead teammates.",
@@ -20,76 +20,92 @@ public Plugin:myinfo =
     url = "https://github.com/bazooka-codes"
 };
 
-public OnPluginStart()
+public void OnPluginStart()
 {
-    CreateConVar("sm_deadtalk_version", VERSION,"Bazooka's deadtalk plugin version", 0, false, 0.0, false, 0.0);
-    Cvar_Deadtalk = CreateConVar("sm_deadtalk", "1", "1 - Deadtalk enabled | 0 - Deadtalk disabled", 0, false, 0.0, false, 0.0);
-    Cvar_Debug = CreateConVar("sm_deadtalk_debug", "1", "1 - Deadtalk debug enabled | 0 - Deadtalk debug disabled", 0, false, 0.0, false, 0.0);
+    CreateConVar("sm_deadtalk_version", VERSION,"Bazooka's deadtalk plugin version");
+    Cvar_Deadtalk = CreateConVar("sm_deadtalk", "1", "1 - Deadtalk enabled | 0 - Deadtalk disabled");
+    Cvar_Debug = CreateConVar("sm_deadtalk_debug", "0", "1 - Deadtalk debug enabled | 0 - Deadtalk debug disabled");
 }
 
-public OnMapStart()
+public void OnMapStart()
 {
     HookEvent("player_spawn", Event_PlayerSpawn);
+    dbg_print("Player spawn event hooked.");
     HookEvent("player_death", Event_PlayerDeath);
+    dbg_print("Player death event hooked.");
 }
 
-public OnEventShutdown()
+public void OnEventShutdown()
 {
     UnhookEvent("player_spawn", Event_PlayerSpawn);
     UnhookEvent("player_death", Event_PlayerDeath);
+    dbg_print("All events unhooked.");
 }
 
-public void Event_PlayerSpawn(Handle:event, const String:name[], bool:dontBroadcast)
+public Action Event_PlayerSpawn(Handle event, const char[] name, bool dontBroadcast)
 {
+    dbg_print("Player has spawned.");
     if(GetConVarInt(Cvar_Deadtalk) != 1) //Plugin is disabled
     {
-        return;
+        dbg_print("Deadtalk not currently running.");
+        return Plugin_Stop;
     }
 
     int client = GetClientOfUserId(GetEventInt(event, "userid")); //Get client that spawned
 
     //loop through every other client in server
-    for(int otherClient = 1; otherClient <= MaxClients; otherClient++)
+    for(int otherClient = 0; otherClient < MaxClients; otherClient++)
     {
         if(!IsClientInGame(otherClient) || client == otherClient)
         {
             //Ignore if other client disconnected or found own client
+            dbg_print("Found own client.");
             continue;
         }
 
+        dbg_print("Allows client to listen to one client.");
         SetListenOverride(client, otherClient, Listen_Default); //Client listens to otherClient = default
     }
+
+    return Plugin_Continue;
 }
 
-public void Event_PlayerDeath(Handle:event, const String:name[], bool:dontBroadcast)
+public Action Event_PlayerDeath(Handle event, const char[] name, bool dontBroadcast)
 {
+    dbg_print("Player has died.");
     if(GetConVarInt(Cvar_Deadtalk) != 1) //Plugin is disabled
     {
-        return;
+        dbg_print("Plugin is not running.")
+        return Plugin_Stop;
     }
 
-    int userid = GetEventInt(event, "userid"); //Get user that died
+    int client = GetClientOfUserId(GetEventInt(event, "userid")); //Get the client that died
 
-    PrintToChat(userid, "Deadtalk: You now have %f seconds to callout before deadtalk begins.", CALLOUT_TIME);
-    CreateTimer(CALLOUT_TIME, deadtalk_timer, userid); //Timer of 5, when expires invokes deadtalk_timer function
+    PrintToChat(client, "Deadtalk: You now have %f seconds to callout before deadtalk begins.", CALLOUT_TIME);
+    dbg_print("Player notified that recently died.");
+    CreateTimer(CALLOUT_TIME, deadtalk_timer, client); //Timer of 5, when expires invokes deadtalk_timer function
+    dbg_print("Timer started.");
+
+    return Plugin_Continue;
 }
 
-public Action deadtalk_timer(Handle:timer, any:userid)
+public Action deadtalk_timer(Handle timer, any client)
 {
-    PrintToChat(userid, "Deadtalk: Now in deadtalk. Live teammates cannot hear you, but you may talk with all other dead players.");
+    PrintToChat(client, "Deadtalk: Now in deadtalk. Live teammates cannot hear you, but you may talk with all other dead players.");
+    dbg_print("Client now in deadtalk.");
 
-    int client = GetClientOfUserId(userid);
-
-    for(int otherClient = 1; otherClient <= MaxClients; otherClient++)
+    for(int otherClient = 0; otherClient < MaxClients; otherClient++)
     {
         if(!IsClientInGame(otherClient) || otherClient == client)
         {
             //Ignore if other client not in game or found own client
+            dbg_print("Found own client.");
             continue;
         }
 
         if(!IsPlayerAlive(otherClient))
         {
+            dbg_print("Allowing client to hear other dead client.");
             //If other client is also dead, set clients can hear each other
             SetListenOverride(client, otherClient, Listen_Yes);
             SetListenOverride(otherClient, client, Listen_Yes);
@@ -97,15 +113,17 @@ public Action deadtalk_timer(Handle:timer, any:userid)
 
         if(GetClientTeam(otherClient) == GetClientTeam(client)) //Clients are on same team
         {
+            dbg_print("Allowed client to hear teammate.");
             //Dead clients can still hear clients on their own team
             SetListenOverride(client, otherClient, Listen_Yes);
         }
     }
 
-    return Action:0;
+    return Plugin_Continue;
 }
 
 public void dbg_print(char[] str)
 {
-    PrintToServer("DEBUG (Deadtalk Plugin): %s\n", str);
+    if(GetConVarBool(Cvar_Debug))
+        PrintToServer("DEBUG (Deadtalk Plugin): %s\n", str);
 }
