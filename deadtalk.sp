@@ -10,7 +10,7 @@
 #include <sdktools>
 #include <multicolors>
 
-#define VERSION "1.0.2"
+#define VERSION "1.1.0"
 
 float CALLOUT_TIME = 5.0; //Easy change how long before a dead player is put in Deadtalk
 
@@ -80,7 +80,7 @@ public Action Event_PlayerDeath(Handle event, const char[] name, bool dontBroadc
         return Plugin_Continue;
     }
 
-    PrintToChat(client, "Deadtalk: You now have %.0f seconds to callout before deadtalk begins.", CALLOUT_TIME);
+    CPrintToChat(client, "{orchid}Deadtalk: {default}You now have %.0f seconds to callout before deadtalk begins.", CALLOUT_TIME);
     CreateTimer(CALLOUT_TIME, deadtalk_timer, client); //Timer of 5, when expires invokes deadtalk_timer function
 
     return Plugin_Continue;
@@ -93,7 +93,7 @@ public Action deadtalk_timer(Handle timer, any client)
         return Plugin_Continue;
     }
 
-    PrintToChat(client, "Deadtalk: Now in deadtalk. Live teammates cannot hear you, but you may talk with all other dead players.");
+    CPrintToChat(client, "{orchid}Deadtalk: {default}Now in deadtalk. Live teammates cannot hear you, but you may talk with all other dead players.");
 
     for(int otherClient = 1; otherClient <= GetClientCount(true); otherClient++)
     {
