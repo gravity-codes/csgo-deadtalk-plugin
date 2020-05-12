@@ -8,9 +8,9 @@
 
 #include <sourcemod>
 #include <sdktools>
-//#include <multicolors>
+#include <multicolors>
 
-#define VERSION "1.0.1"
+#define VERSION "1.0.2"
 
 float CALLOUT_TIME = 5.0; //Easy change how long before a dead player is put in Deadtalk
 
@@ -80,7 +80,7 @@ public Action Event_PlayerDeath(Handle event, const char[] name, bool dontBroadc
         return Plugin_Continue;
     }
 
-    PrintToChat(client, "Deadtalk: You now have %.1f seconds to callout before deadtalk begins.", CALLOUT_TIME);
+    PrintToChat(client, "Deadtalk: You now have %.0f seconds to callout before deadtalk begins.", CALLOUT_TIME);
     CreateTimer(CALLOUT_TIME, deadtalk_timer, client); //Timer of 5, when expires invokes deadtalk_timer function
 
     return Plugin_Continue;
