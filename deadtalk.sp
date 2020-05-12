@@ -1,7 +1,16 @@
+/*
+    #66023c - Tyrian purple hex
+    #02dbe3 - Neon blue
+
+    - v1.0.0 Stable and working with no extra features
+    - Next: Add formatting and colors for visual improvements
+*/
+
 #include <sourcemod>
 #include <sdktools>
+//#include <multicolors>
 
-#define VERSION "1.0.0"
+#define VERSION "1.0.1"
 
 float CALLOUT_TIME = 5.0; //Easy change how long before a dead player is put in Deadtalk
 
@@ -66,7 +75,7 @@ public Action Event_PlayerDeath(Handle event, const char[] name, bool dontBroadc
 
     int client = GetClientOfUserId(GetEventInt(event, "userid")); //Get the client that died
 
-    if(!IsClientInGame(client))
+    if(!IsClientInGame(client) || IsPlayerAlive(client))
     {
         return Plugin_Continue;
     }
@@ -79,7 +88,7 @@ public Action Event_PlayerDeath(Handle event, const char[] name, bool dontBroadc
 
 public Action deadtalk_timer(Handle timer, any client)
 {
-    if(!IsClientInGame(client))
+    if(IsPlayerAlive(client))
     {
         return Plugin_Continue;
     }
