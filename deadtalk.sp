@@ -10,7 +10,7 @@
 #include <sdktools>
 #include <multicolors>
 
-#define VERSION "1.1.0"
+#define VERSION "1.1.1"
 
 float CALLOUT_TIME = 5.0; //Easy change how long before a dead player is put in Deadtalk
 
@@ -88,7 +88,7 @@ public Action Event_PlayerDeath(Handle event, const char[] name, bool dontBroadc
 
 public Action deadtalk_timer(Handle timer, any client)
 {
-    if(IsPlayerAlive(client))
+    if(!IsClientInGame(client) || IsPlayerAlive(client))
     {
         return Plugin_Continue;
     }
