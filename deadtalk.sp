@@ -1,16 +1,13 @@
 /*
-    #66023c - Tyrian purple hex
-    #02dbe3 - Neon blue
-
-    - v1.0.0 Stable and working with no extra features
-    - Next: Add formatting and colors for visual improvements
+    - v1.1.2 Stable and working with colors
+    - Next: Rare bug where a player was heard server wide
 */
 
 #include <sourcemod>
 #include <sdktools>
 #include <multicolors>
 
-#define VERSION "1.1.1"
+#define VERSION "1.1.2"
 
 float CALLOUT_TIME = 5.0; //Easy change how long before a dead player is put in Deadtalk
 
@@ -109,8 +106,7 @@ public Action deadtalk_timer(Handle timer, any client)
             SetListenOverride(client, otherClient, Listen_Yes);
             SetListenOverride(otherClient, client, Listen_Yes);
         }
-
-        if(GetClientTeam(otherClient) == GetClientTeam(client)) //Clients are on same team
+        else if(GetClientTeam(otherClient) == GetClientTeam(client)) //Clients are on same team
         {
             //Dead clients can still hear clients on their own team, but live teammates cant hear dead
             SetListenOverride(client, otherClient, Listen_Yes);
