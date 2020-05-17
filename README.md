@@ -1,5 +1,5 @@
 A Deadtalk Plugin for CSGO
-
+#-
 Status: Working
 
 This plugin enables the Deadtalk function. This means when a player dies, they can hear and talk to all other dead players,
