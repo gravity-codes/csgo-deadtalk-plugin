@@ -8,12 +8,12 @@
 #include <multicolors>
 #include <clientprefs>
 
-#define VERSION "1.2.1"
+#define VERSION "1.2.2"
 #pragma newdecls required
 
 float CALLOUT_TIME = 5.0; //Easy change how long before a dead player is put in Deadtalk
-char DEADTALK_USAGE[] = {"Type \"!dt\" | \"!deadtalk\" <(on/1) | (off/0)> to change your deadtalk preference."};
-char DTNOTIF_USAGE[] = {"Type \"!dt_notif\" or \"!deadtalk_notif\" to toggle deadtalk notifications."};
+char DEADTALK_USAGE[] = {"Type \"!dt\" | \"!deadtalk\" <(on/1) | (off/0)> to change your deadtalk preference"};
+char DTNOTIF_USAGE[] = {"Type \"!dtn\" or \"!deadtalk_notif\" to toggle deadtalk notifications"};
 
 Handle Cvar_Deadtalk = INVALID_HANDLE; //Stores if plugin is enabled
 Handle Cvar_Mode = INVALID_HANDLE; //Stores plugin mode
@@ -39,7 +39,7 @@ public void OnPluginStart()
    //Setup server commands
    RegConsoleCmd("sm_deadtalk", DeadtalkToggle, "Will change client's deadtalk preference based off args or display current value.");
    RegConsoleCmd("sm_dt", DeadtalkToggle, "Will change client's deadtalk preference based off args or display current value.");
-   RegConsoleCmd("sm_dt_notif", ToggleNotifications, "Toggles Deadtalk notifications.");
+   RegConsoleCmd("sm_dtn", ToggleNotifications, "Toggles Deadtalk notifications.");
    RegConsoleCmd("sm_deadtalk_notif", ToggleNotifications, "Toggles Deadtalk notifications.");
 
    //Setup cookies
@@ -57,8 +57,27 @@ public void OnEventShutdown()
    UnhookEvent("player_death", Event_PlayerDeath);
 }
 
+public void OnClientConnected(int client)
+{
+   if(GetConVarInt(Cvar_Deadtalk) != 1)
+   {
+      return;
+   }
+
+   //Print notifications on connect for clients who disabled notifications
+   if(getDTNotifPrefs(client) == 0 && IsClientInGame(client))
+   {
+      CPrintToChat(client, "{orchid}[WiT] Gaming Deadtalk: {default}Your deadtalk notifications are currently disabled. To enable: %s.", DTNOTIF_USAGE);
+   }
+}
+
 public Action DeadtalkToggle(int client, int args)
 {
+   if(GetConVarInt(Cvar_Deadtalk) != 1)
+   {
+      return Plugin_Stop;
+   }
+
    if(args == 0)
    {
       //!deadtalk; client checking preference
@@ -189,6 +208,11 @@ public Action DeadtalkToggle(int client, int args)
 
 public Action ToggleNotifications(int client, int args)
 {
+   if(GetConVarInt(Cvar_Deadtalk) != 1)
+   {
+      return Plugin_Stop;
+   }
+
    if(args != 0)
    {
       //!dt_notif ____; Invalid syntax
@@ -251,11 +275,6 @@ public Action Event_PlayerSpawn(Handle event, const char[] name, bool dontBroadc
    if(getDTNotifPrefs(client) == 1 || getDTNotifPrefs(client) == -1)
    {
       CPrintToChat(client, "{orchid}[WiT] Gaming Deadtalk: {default}You currently have deadtalk notifications enabled; to toggle off: %s", DTNOTIF_USAGE);
-   }
-
-   if(getDTNotifPrefs(client) == 0)
-   {
-      CPrintToChat(client, "{orchid}[WiT] Gaming Deadtalk: {default}You currently have notifications disabled; to toggle on: %s", DTNOTIF_USAGE);
    }
 
    return Plugin_Continue;
