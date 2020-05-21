@@ -57,20 +57,6 @@ public void OnEventShutdown()
    UnhookEvent("player_death", Event_PlayerDeath);
 }
 
-public void OnClientConnected(int client)
-{
-   if(GetConVarInt(Cvar_Deadtalk) != 1)
-   {
-      return;
-   }
-
-   //Print notifications on connect for clients who disabled notifications
-   if(getDTNotifPrefs(client) == 0 && IsClientInGame(client))
-   {
-      CPrintToChat(client, "{orchid}[WiT] Gaming Deadtalk: {default}Your deadtalk notifications are currently disabled. To enable: %s.", DTNOTIF_USAGE);
-   }
-}
-
 public Action DeadtalkToggle(int client, int args)
 {
    if(GetConVarInt(Cvar_Deadtalk) != 1)
@@ -148,7 +134,7 @@ public Action DeadtalkToggle(int client, int args)
          GetClientName(client, clientName, sizeof(clientName));
 
          setDeadtalkPrefs(client, 0);
-         CReplyToCommand(client, "{orchid}[WiT] Gaming Deadtalk: {default} Updated client: %s with preference of 0(disabled).", clientName);
+         CReplyToCommand(client, "{orchid}[WiT] Gaming Deadtalk: {default}Updated client: %s with preference of 0(disabled).", clientName);
 
          if(IsClientInGame(client) && !IsPlayerAlive(client))
          {
@@ -260,6 +246,16 @@ public Action Event_PlayerSpawn(Handle event, const char[] name, bool dontBroadc
 
    int client = GetClientOfUserId(GetEventInt(event, "userid")); //Get client that spawned
 
+   if(getDTNotifPrefs(client) == 0)
+   {
+      //Client has notifications turned off
+      if(GetClientDeaths(client) < 1 && GetClientFrags(client) < 1)
+      {
+         //Print how to enable notifications on first spawn
+         CPrintToChat(client, "{orchid}[WiT] Gaming Deadtalk: {default}You currently have deadtalk notifications disabled. To enable: %s.", DTNOTIF_USAGE);
+      }
+   }
+
    //loop through every other client in server
    for(int otherClient = 1; otherClient <= GetClientCount(true); otherClient++)
    {
@@ -303,6 +299,21 @@ public Action Event_PlayerDeath(Handle event, const char[] name, bool dontBroadc
          CPrintToChat(client, "{orchid}[WiT] Gaming Deadtalk: {default}Deadtalk currently disabled. %s", DEADTALK_USAGE);
       }
 
+      for(int i = 1; i < GetClientCount(true); i++)
+      {
+         if(IsClientInGame(i) && !IsPlayerAlive(i) && getDeadtalkPrefs(i) == 1)
+         {
+            if(i == client)
+            {
+               continue;
+            }
+
+            //If the other client is dead with deadtalk on, set so they cant hear each other
+            SetListenOverride(client, i, Listen_No);
+            SetListenOverride(i, client, Listen_No);
+         }
+      }
+
       return Plugin_Continue;
    }
 
@@ -332,7 +343,7 @@ public Action deadtalk_timer(Handle timer, any client)
 
    if(getDTNotifPrefs(client) == 0) //Client disabled notifs
    {
-      CPrintToChat(client, "{orchid}[WiT] Gaming Deadtalk: {default}Deadtalk on.");
+      CPrintToChat(client, "{orchid}[WiT] Gaming Deadtalk: {default}Deadtalk started.");
    }
 
    for(int otherClient = 1; otherClient <= GetClientCount(true); otherClient++)
@@ -351,10 +362,12 @@ public Action deadtalk_timer(Handle timer, any client)
             SetListenOverride(client, otherClient, Listen_No);
             SetListenOverride(otherClient, client, Listen_No);
          }
-
-         //If other client is also dead with deadtalk enabled, set clients can hear each other
-         SetListenOverride(client, otherClient, Listen_Yes);
-         SetListenOverride(otherClient, client, Listen_Yes);
+         else
+         {
+            //If other client is also dead with deadtalk enabled, set clients can hear each other
+            SetListenOverride(client, otherClient, Listen_Yes);
+            SetListenOverride(otherClient, client, Listen_Yes);
+         }
       }
       else if(GetClientTeam(otherClient) == GetClientTeam(client)) //Clients are on same team
       {
