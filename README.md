@@ -9,7 +9,7 @@ to modify in-game chat colors.
 This version incorporates specifically requested features and options to correspond to WiT Gaming CS:GO community servers.
 This means that some functionality may be unwanted for general use, so use the general-use version.
 If you would like to incorporate your own branding, options, and features: get in contact with me through pull request or
-email (on profile).
+email: bazookaforreal@gmail.com.
 
 
 Compilation: Compiles normally using the Sourcemod compiler, within the scripting directory, but must include Multicolors
