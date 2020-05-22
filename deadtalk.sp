@@ -1,5 +1,5 @@
 /*
-   - v1.2.0 Stable and working with colors and added WiT Retake branding and features
+   - v1.2.2 Stable and working with colors and added WiT Retake branding and features
    - Next: Adding mode, where you can control what type of deadtalk is running
 */
 
@@ -7,6 +7,7 @@
 #include <sdktools>
 #include <multicolors>
 #include <clientprefs>
+#include <interrogate>
 
 #define VERSION "1.2.2"
 #pragma newdecls required
@@ -246,6 +247,11 @@ public Action Event_PlayerSpawn(Handle event, const char[] name, bool dontBroadc
 
    int client = GetClientOfUserId(GetEventInt(event, "userid")); //Get client that spawned
 
+   if(IsClientInInterrogation(client))
+   {
+      return Plugin_Continue;
+   }
+
    if(getDTNotifPrefs(client) == 0)
    {
       //Client has notifications turned off
@@ -262,6 +268,11 @@ public Action Event_PlayerSpawn(Handle event, const char[] name, bool dontBroadc
       if(!IsClientInGame(otherClient) || client == otherClient)
       {
          //Ignore if other client disconnected or found own client
+         continue;
+      }
+
+      if(IsClientInInterrogation(otherClient))
+      {
          continue;
       }
 
@@ -335,6 +346,11 @@ public Action deadtalk_timer(Handle timer, any client)
       return Plugin_Continue;
    }
 
+   if(IsClientInInterrogation(client))
+   {
+      return Plugin_Continue;
+   }
+
    if(getDTNotifPrefs(client) == 1 || getDTNotifPrefs(client) == -1) //Client gets notifs
    {
       CPrintToChat(client, "{orchid}[WiT] Gaming Deadtalk: {default}Now in deadtalk. Live teammates cannot hear you, but you may talk with all other dead players.");
@@ -351,6 +367,11 @@ public Action deadtalk_timer(Handle timer, any client)
       if(!IsClientInGame(otherClient) || otherClient == client)
       {
          //Ignore if other client not in game or found own client
+         continue;
+      }
+
+      if(IsClientInInterrogation(otherClient))
+      {
          continue;
       }
 
