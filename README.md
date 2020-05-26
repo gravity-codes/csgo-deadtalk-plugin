@@ -1,4 +1,4 @@
-# A Deadtalk Plugin for CSGO
+# A Deadtalk Plugin for CS:GO
 ### Status: Working
 ![Github All Releases](https://img.shields.io/github/downloads/bazooka-codes/csgo-deadtalk-plugin/total)
 
