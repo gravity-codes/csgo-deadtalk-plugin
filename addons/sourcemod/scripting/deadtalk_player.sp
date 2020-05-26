@@ -1,6 +1,7 @@
 /*
-   - v1.2.2 Stable and working with colors and added WiT Retake branding and features
-   - Next: Adding mode, where you can control what type of deadtalk is running
+   - v1.2.2 Fully functioning general release version
+   - In this version the deadtalk function is per-player choice. Players who have it off will not
+   -  hear dead players with it on and vice versa. This mode needs the interrogate.inc.
 */
 
 #include <sourcemod>
@@ -9,7 +10,7 @@
 #include <clientprefs>
 #include <interrogate>
 
-#define VERSION "1.2.2"
+#define VERSION "1.2.3"
 #pragma newdecls required
 
 float CALLOUT_TIME = 5.0; //Easy change how long before a dead player is put in Deadtalk
@@ -22,8 +23,8 @@ Handle DTNotifCookie; //Stores the client notification cookie for deadtalk
 
 public Plugin myinfo =
 {
-   name = "[WiT] Gaming Deadtalk",
-   description = "Plugin developed for [WiT] Gaming that enables the deadtalk function. Dead players can talk to and hear all other dead players, while also hearing their team; live players do not hear dead teammates.",
+   name = "Bazooka's Deadtalk Plugin",
+   description = "Plugin that enables the deadtalk function. Dead players can talk to and hear all other dead players, while also hearing their team; live players do not hear dead teammates.",
    author = "bazooka",
    version = VERSION,
    url = "https://github.com/bazooka-codes"
@@ -32,8 +33,8 @@ public Plugin myinfo =
 public void OnPluginStart()
 {
    //Setup convars
-   CreateConVar("sm_deadtalk_version", VERSION,"Bazooka's deadtalk plugin version");
-   Cvar_Deadtalk = CreateConVar("sm_deadtalk_enable", "1", "1 - Enable deadtalk | 0 - Disable deadtalk");
+   CreateConVar("sm_deadtalk_player_version", VERSION,"Bazooka's deadtalk plugin version");
+   Cvar_Deadtalk = CreateConVar("sm_deadtalk_player_enable", "1", "1 - Enable deadtalk | 0 - Disable deadtalk");
 
    //Setup server commands
    RegConsoleCmd("sm_deadt", DeadtalkToggle, "Will change client's deadtalk preference based off args or display current value.");
@@ -71,29 +72,29 @@ public Action DeadtalkToggle(int client, int args)
 
       if(getDeadtalkPrefs(client) == -1)
       {
-         CReplyToCommand(client, "{orchid}[WiT] Gaming Deadtalk: {default}Client: %s's deadtalk preference not found.", clientName);
+         CReplyToCommand(client, "{orchid}Deadtalk: {default}Client: %s's deadtalk preference not found.", clientName);
       }
       else if(getDeadtalkPrefs(client) == 0)
       {
-         CReplyToCommand(client, "{orchid}[WiT] Gaming Deadtalk: {default}Client: %s's deadtalk preference: 0(disabled).", clientName);
+         CReplyToCommand(client, "{orchid}Deadtalk: {default}Client: %s's deadtalk preference: 0(disabled).", clientName);
       }
       else if(getDeadtalkPrefs(client) == 1)
       {
-         CReplyToCommand(client, "{orchid}[WiT] Gaming Deadtalk: {default}Client: %s's deadtalk preference: 1(enabled).", clientName);
+         CReplyToCommand(client, "{orchid}Deadtalk: {default}Client: %s's deadtalk preference: 1(enabled).", clientName);
       }
       else
       {
-         CReplyToCommand(client, "{orchid}[WiT] Gaming Deadtalk: {default}ERROR - While finding deadtalk preference.");
+         CReplyToCommand(client, "{orchid}Deadtalk: {default}ERROR - While finding deadtalk preference.");
       }
 
       //Show clients how to change their preference
-      CReplyToCommand(client, "{orchid}[WiT] Gaming Deadtalk: {default}%s", DEADTALK_USAGE);
+      CReplyToCommand(client, "{orchid}Deadtalk: {default}%s", DEADTALK_USAGE);
       return Plugin_Continue;
    }
    else if(args != 1)
    {
       //!deadtalk ____ ____; invalid syntax
-      CReplyToCommand(client, "{orchid}[WiT] Gaming Deadtalk: {default}ERROR - Invalid syntax. Usage: %s", DEADTALK_USAGE);
+      CReplyToCommand(client, "{orchid}Deadtalk: {default}ERROR - Invalid syntax. Usage: %s", DEADTALK_USAGE);
       return Plugin_Handled;
    }
 
@@ -111,11 +112,11 @@ public Action DeadtalkToggle(int client, int args)
          GetClientName(client, clientName, sizeof(clientName));
 
          setDeadtalkPrefs(client, 0);
-         CReplyToCommand(client, "{orchid}[WiT] Gaming Deadtalk: {default}No stored preference detected. Added new client: %s with Deadtalk preference of 0(disabled).", clientName);
+         CReplyToCommand(client, "{orchid}Deadtalk: {default}No stored preference detected. Added new client: %s with Deadtalk preference of 0(disabled).", clientName);
 
          if(IsClientInGame(client) && !IsPlayerAlive(client))
          {
-            CPrintToChat(client, "{orchid}[WiT] Gaming Deadtalk: {default}New deadtalk preference will take effect next round.");
+            CPrintToChat(client, "{orchid}Deadtalk: {default}New deadtalk preference will take effect next round.");
          }
       }
       else if(getDeadtalkPrefs(client) == 0)
@@ -124,7 +125,7 @@ public Action DeadtalkToggle(int client, int args)
          char clientName[MAX_NAME_LENGTH];
          GetClientName(client, clientName, sizeof(clientName));
 
-         CReplyToCommand(client, "{orchid}[WiT] Gaming Deadtalk: {default}Client: %s already has preference of 0(disabled)", clientName);
+         CReplyToCommand(client, "{orchid}Deadtalk: {default}Client: %s already has preference of 0(disabled)", clientName);
       }
       else if(getDeadtalkPrefs(client) == 1)
       {
@@ -133,11 +134,11 @@ public Action DeadtalkToggle(int client, int args)
          GetClientName(client, clientName, sizeof(clientName));
 
          setDeadtalkPrefs(client, 0);
-         CReplyToCommand(client, "{orchid}[WiT] Gaming Deadtalk: {default}Updated client: %s with preference of 0(disabled).", clientName);
+         CReplyToCommand(client, "{orchid}Deadtalk: {default}Updated client: %s with preference of 0(disabled).", clientName);
 
          if(IsClientInGame(client) && !IsPlayerAlive(client))
          {
-            CPrintToChat(client, "{orchid}[WiT] Gaming Deadtalk: {default}New deadtalk preference will take effect next round.");
+            CPrintToChat(client, "{orchid}Deadtalk: {default}New deadtalk preference will take effect next round.");
          }
       }
    }
@@ -151,11 +152,11 @@ public Action DeadtalkToggle(int client, int args)
          GetClientName(client, clientName, sizeof(clientName));
 
          setDeadtalkPrefs(client, 1);
-         CReplyToCommand(client, "{orchid}[WiT] Gaming Deadtalk: {default}No stored preference detected. Added new client: %s with Deadtalk preference of 0(disabled).", clientName);
+         CReplyToCommand(client, "{orchid}Deadtalk: {default}No stored preference detected. Added new client: %s with Deadtalk preference of 0(disabled).", clientName);
 
          if(IsClientInGame(client) && !IsPlayerAlive(client))
          {
-            CPrintToChat(client, "{orchid}[WiT] Gaming Deadtalk: {default}New deadtalk preference will take effect next round.");
+            CPrintToChat(client, "{orchid}Deadtalk: {default}New deadtalk preference will take effect next round.");
          }
       }
       else if(getDeadtalkPrefs(client) == 0)
@@ -165,11 +166,11 @@ public Action DeadtalkToggle(int client, int args)
          GetClientName(client, clientName, sizeof(clientName));
 
          setDeadtalkPrefs(client, 1);
-         CReplyToCommand(client, "{orchid}[WiT] Gaming Deadtalk: {default}Updated client: %s with deadtalk preference of 1(enabled).", clientName);
+         CReplyToCommand(client, "{orchid}Deadtalk: {default}Updated client: %s with deadtalk preference of 1(enabled).", clientName);
 
          if(IsClientInGame(client) && !IsPlayerAlive(client))
          {
-            CPrintToChat(client, "{orchid}[WiT] Gaming Deadtalk: {default}New deadtalk preference will take effect next round.");
+            CPrintToChat(client, "{orchid}Deadtalk: {default}New deadtalk preference will take effect next round.");
          }
       }
       else if(getDeadtalkPrefs(client) == 1)
@@ -178,13 +179,13 @@ public Action DeadtalkToggle(int client, int args)
          char clientName[MAX_NAME_LENGTH];
          GetClientName(client, clientName, sizeof(clientName));
 
-         CReplyToCommand(client, "{orchid}[WiT] Gaming Deadtalk: {default}Client: %s already has preference of 1(enabled).", clientName);
+         CReplyToCommand(client, "{orchid}Deadtalk: {default}Client: %s already has preference of 1(enabled).", clientName);
       }
    }
    else
    {
       //!deadtalk <something not accepted>; Invalid syntax
-      CReplyToCommand(client, "{orchid} [WiT] Gaming Deadtalk: {default}ERROR - Invalid argument. Usage: %s", DEADTALK_USAGE);
+      CReplyToCommand(client, "{orchid}Deadtalk: {default}ERROR - Invalid argument. Usage: %s", DEADTALK_USAGE);
       return Plugin_Handled;
    }
 
@@ -201,7 +202,7 @@ public Action ToggleNotifications(int client, int args)
    if(args != 0)
    {
       //!dt_notif ____; Invalid syntax
-      CReplyToCommand(client, "{orchid}[WiT] Gaming Deadtalk: {default}Invalid syntax. Usage: %s", DTNOTIF_USAGE);
+      CReplyToCommand(client, "{orchid}Deadtalk: {default}Invalid syntax. Usage: %s", DTNOTIF_USAGE);
 
       return Plugin_Handled;
    }
@@ -214,23 +215,23 @@ public Action ToggleNotifications(int client, int args)
    {
       //New client cookie; add new client and toggle off notifs
       setDTNotifPrefs(client, 0);
-      CReplyToCommand(client, "{orchid}[WiT] Gaming Deadtalk: {default}Unable to locate notification preferences. Added new client: %s with notifications {darkred}OFF{default}.", clientName);
+      CReplyToCommand(client, "{orchid}Deadtalk: {default}Unable to locate notification preferences. Added new client: %s with notifications {darkred}OFF{default}.", clientName);
    }
    else if(clientPref == 0)
    {
       //Client has notifications off; wants to toggle them on
       setDTNotifPrefs(client, 1);
-      CReplyToCommand(client, "{orchid}[WiT] Gaming Deadtalk: {default}Toggled client: %s's notifications {green}ON{default}.", clientName);
+      CReplyToCommand(client, "{orchid}Deadtalk: {default}Toggled client: %s's notifications {green}ON{default}.", clientName);
    }
    else if(clientPref == 1)
    {
       //Client has notifications on; wants to toggle them off
       setDTNotifPrefs(client, 0);
-      CReplyToCommand(client, "{orchid}[WiT] Gaming Deadtalk: {default}Toggled client: %s's notifications {darkred}OFF{default}.", clientName);
+      CReplyToCommand(client, "{orchid}Deadtalk: {default}Toggled client: %s's notifications {darkred}OFF{default}.", clientName);
    }
    else
    {
-      CReplyToCommand(client, "{orchid}[WiT] Gaming Deadtalk: {default}ERROR - Unable to toggle notifications.");
+      CReplyToCommand(client, "{orchid}Deadtalk: {default}ERROR - Unable to toggle notifications.");
    }
 
    return Plugin_Continue;
@@ -256,7 +257,7 @@ public Action Event_PlayerSpawn(Handle event, const char[] name, bool dontBroadc
       if(GetClientDeaths(client) < 1 && GetClientFrags(client) < 1)
       {
          //Print how to enable notifications on first spawn
-         CPrintToChat(client, "{orchid}[WiT] Gaming Deadtalk: {default}You currently have deadtalk notifications disabled. To enable: %s.", DTNOTIF_USAGE);
+         CPrintToChat(client, "{orchid}Deadtalk: {default}You currently have deadtalk notifications disabled. To enable: %s.", DTNOTIF_USAGE);
       }
    }
 
@@ -280,7 +281,7 @@ public Action Event_PlayerSpawn(Handle event, const char[] name, bool dontBroadc
 
    if(getDTNotifPrefs(client) == 1 || getDTNotifPrefs(client) == -1)
    {
-      CPrintToChat(client, "{orchid}[WiT] Gaming Deadtalk: {default}You currently have deadtalk notifications enabled; to toggle off: %s", DTNOTIF_USAGE);
+      CPrintToChat(client, "{orchid}Deadtalk: {default}You currently have deadtalk notifications enabled; to toggle off: %s", DTNOTIF_USAGE);
    }
 
    return Plugin_Continue;
@@ -311,7 +312,7 @@ public Action Event_PlayerDeath(Handle event, const char[] name, bool dontBroadc
       if(getDTNotifPrefs(client) == 1 || getDTNotifPrefs(client) == -1)
       {
          //Only print if client has notifications enabled
-         CPrintToChat(client, "{orchid}[WiT] Gaming Deadtalk: {default}Deadtalk currently disabled. You will not hear dead teammates who have deadtalk enabled. %s", DEADTALK_USAGE);
+         CPrintToChat(client, "{orchid}Deadtalk: {default}Deadtalk currently disabled. You will not hear dead teammates who have deadtalk enabled. %s", DEADTALK_USAGE);
       }
 
       //Make sure client cant hear dead teammates with deadtalk on
@@ -336,7 +337,7 @@ public Action Event_PlayerDeath(Handle event, const char[] name, bool dontBroadc
    if(getDTNotifPrefs(client) == 1 || getDTNotifPrefs(client) == -1)
    {
       //Only print if client has notifications on
-      CPrintToChat(client, "{orchid}[WiT] Gaming Deadtalk: {default}You now have %.0f seconds to callout before deadtalk begins.", CALLOUT_TIME);
+      CPrintToChat(client, "{orchid}Deadtalk: {default}You now have %.0f seconds to callout before deadtalk begins.", CALLOUT_TIME);
    }
 
    CreateTimer(CALLOUT_TIME, deadtalk_timer, client);
@@ -358,13 +359,13 @@ public Action deadtalk_timer(Handle timer, any client)
 
    if(getDTNotifPrefs(client) == 1 || getDTNotifPrefs(client) == -1) //Client gets notifs
    {
-      CPrintToChat(client, "{orchid}[WiT] Gaming Deadtalk: {default}Now in deadtalk. Live teammates cannot hear you, but you may talk with all other dead players.");
-      CPrintToChat(client, "{orchid}[WiT] Gaming Deadtalk: {default}To turn off: %s", DEADTALK_USAGE);
+      CPrintToChat(client, "{orchid}Deadtalk: {default}Now in deadtalk. Live teammates cannot hear you, but you may talk with all other dead players.");
+      CPrintToChat(client, "{orchid}Deadtalk: {default}To turn off: %s", DEADTALK_USAGE);
    }
 
    if(getDTNotifPrefs(client) == 0) //Client disabled notifs
    {
-      CPrintToChat(client, "{orchid}[WiT] Gaming Deadtalk: {default}Deadtalk started.");
+      CPrintToChat(client, "{orchid}Deadtalk: {default}Deadtalk started.");
    }
 
    for(int otherClient = 1; otherClient <= GetClientCount(true); otherClient++)
