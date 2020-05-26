@@ -13,11 +13,10 @@
 #pragma newdecls required
 
 float CALLOUT_TIME = 5.0; //Easy change how long before a dead player is put in Deadtalk
-char DEADTALK_USAGE[] = {"Type \"!dt\" | \"!deadtalk\" <(on/1) | (off/0)> to change your deadtalk preference"};
-char DTNOTIF_USAGE[] = {"Type \"!dtn\" or \"!deadtalk_notif\" to toggle deadtalk notifications"};
+char DEADTALK_USAGE[] = {"Type \"!dt\" | \"!deadt\" <(on/1) | (off/0)> to change your deadtalk preference"};
+char DTNOTIF_USAGE[] = {"Type \"!dtn\" or \"!deadt_notif\" to toggle deadtalk notifications"};
 
 Handle Cvar_Deadtalk = INVALID_HANDLE; //Stores if plugin is enabled
-Handle Cvar_Mode = INVALID_HANDLE; //Stores plugin mode
 Handle DeadtalkCookie; //Stores the client preference cookie for deadtalk
 Handle DTNotifCookie; //Stores the client notification cookie for deadtalk
 
@@ -35,13 +34,12 @@ public void OnPluginStart()
    //Setup convars
    CreateConVar("sm_deadtalk_version", VERSION,"Bazooka's deadtalk plugin version");
    Cvar_Deadtalk = CreateConVar("sm_deadtalk_enable", "1", "1 - Enable deadtalk | 0 - Disable deadtalk");
-   Cvar_Mode = CreateConVar("sm_deadtalk_mode", "2", "1 - Deadtalk is server wide (no options) | 2 - Deadtalk is individual based (enable options) | 0 - Debug mode");
 
    //Setup server commands
-   RegConsoleCmd("sm_deadtalk", DeadtalkToggle, "Will change client's deadtalk preference based off args or display current value.");
+   RegConsoleCmd("sm_deadt", DeadtalkToggle, "Will change client's deadtalk preference based off args or display current value.");
    RegConsoleCmd("sm_dt", DeadtalkToggle, "Will change client's deadtalk preference based off args or display current value.");
    RegConsoleCmd("sm_dtn", ToggleNotifications, "Toggles Deadtalk notifications.");
-   RegConsoleCmd("sm_deadtalk_notif", ToggleNotifications, "Toggles Deadtalk notifications.");
+   RegConsoleCmd("sm_deadt_notif", ToggleNotifications, "Toggles Deadtalk notifications.");
 
    //Setup cookies
    DeadtalkCookie = RegClientCookie("deadtalk_preference_cookie", "1 - Client has deadtalk enabled | 0 - Client has deadtalk disabled", CookieAccess_Protected);
@@ -254,7 +252,7 @@ public Action Event_PlayerSpawn(Handle event, const char[] name, bool dontBroadc
 
    if(getDTNotifPrefs(client) == 0)
    {
-      //Client has notifications turned off
+      //Treat no deaths and no kills as first spawn; print notification on first spawn
       if(GetClientDeaths(client) < 1 && GetClientFrags(client) < 1)
       {
          //Print how to enable notifications on first spawn
@@ -276,7 +274,8 @@ public Action Event_PlayerSpawn(Handle event, const char[] name, bool dontBroadc
          continue;
       }
 
-      SetListenOverride(client, otherClient, Listen_Default); //Client listens to otherClient = default
+      //Client listens to otherClient = default
+      SetListenOverride(client, otherClient, Listen_Default);
    }
 
    if(getDTNotifPrefs(client) == 1 || getDTNotifPrefs(client) == -1)
@@ -301,20 +300,26 @@ public Action Event_PlayerDeath(Handle event, const char[] name, bool dontBroadc
       return Plugin_Continue;
    }
 
+   if(IsClientInInterrogation(client))
+   {
+      return Plugin_Continue;
+   }
+
    if(getDeadtalkPrefs(client) == 0 || getDeadtalkPrefs(client) == -1)
    {
       //If client has deadtalk disabled, ignore their death; alert them how to enable
       if(getDTNotifPrefs(client) == 1 || getDTNotifPrefs(client) == -1)
       {
          //Only print if client has notifications enabled
-         CPrintToChat(client, "{orchid}[WiT] Gaming Deadtalk: {default}Deadtalk currently disabled. %s", DEADTALK_USAGE);
+         CPrintToChat(client, "{orchid}[WiT] Gaming Deadtalk: {default}Deadtalk currently disabled. You will not hear dead teammates who have deadtalk enabled. %s", DEADTALK_USAGE);
       }
 
+      //Make sure client cant hear dead teammates with deadtalk on
       for(int i = 1; i < GetClientCount(true); i++)
       {
          if(IsClientInGame(i) && !IsPlayerAlive(i) && getDeadtalkPrefs(i) == 1)
          {
-            if(i == client)
+            if(i == client || IsClientInInterrogation(i))
             {
                continue;
             }
@@ -453,11 +458,4 @@ public int getDTNotifPrefs(int client)
    }
 
    return -1;
-}
-
-//Function used to make debugging easier
-public void dbg_print(char[] str)
-{
-   if(GetConVarInt(Cvar_Mode) == 0)
-      PrintToServer("DEBUG (Deadtalk Plugin): %s\n", str);
 }
