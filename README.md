@@ -1,6 +1,6 @@
 # A Deadtalk Plugin for CS:GO
 ### Status: Working
-![GitHub](https://img.shields.io/github/license/bazooka-codes/csgo-deadtalk-plugin)![Github All Releases](https://img.shields.io/github/downloads/bazooka-codes/csgo-deadtalk-plugin/total)
+![GitHub](https://img.shields.io/github/license/bazooka-codes/csgo-deadtalk-plugin) ![Github All Releases](https://img.shields.io/github/downloads/bazooka-codes/csgo-deadtalk-plugin/total)
 
 Deadtalk is a function in which dead players can talk to all other dead players in server including the other team's dead players, while the living players cannot hear them. The only custom dependency is interrogate.inc, from my other plugin, so that interrogations do not break deadtalk. This plugin contains two seperate running versions of deadtalk. DO NOT HAVE BOTH VERSIONS RUNNING ON THE SAME SERVER AS THE PLUGIN WILL BREAK. The first and named just "deadtalk" runs as would be expected where the entire server either has deadtalk or doesn't. I also developed another version named "deadtalk_player" which allows players to turn deadtalk on or off. The preference will save using clientprefs, and has notifications baked in. With this version, dead players in deadtalk will not be able to hear those dead with deadtalk disabled and vice versa. The player-based version will be less used, but since I developed it, I will let the option to you if you want to use it.
 
