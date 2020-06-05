@@ -13,7 +13,7 @@
 #pragma newdecls required
 
 float CALLOUT_TIME = 5.0; //Easy change how long before a dead player is put in Deadtalk
-Handle Cvar_Deadtalk = INVALID_HANDLE; //Stores if plugin is enabled
+ConVar Cvar_Deadtalk; //Stores if plugin is enabled
 
 public Plugin myinfo =
 {
@@ -43,7 +43,7 @@ public void OnEventShutdown()
 
 public Action Event_PlayerSpawn(Handle event, const char[] name, bool dontBroadcast)
 {
-   if(GetConVarInt(Cvar_Deadtalk) != 1) //Plugin is disabled
+   if(Cvar_Deadtalk.IntValue != 1) //Plugin is disabled
    {
       return Plugin_Stop;
    }
@@ -56,7 +56,7 @@ public Action Event_PlayerSpawn(Handle event, const char[] name, bool dontBroadc
    }
 
    //loop through every other client in server
-   for(int otherClient = 1; otherClient <= GetClientCount(true); otherClient++)
+   for(int otherClient = 1; otherClient <= MaxClients; otherClient++)
    {
       if(!IsClientInGame(otherClient) || client == otherClient)
       {
@@ -78,7 +78,7 @@ public Action Event_PlayerSpawn(Handle event, const char[] name, bool dontBroadc
 
 public Action Event_PlayerDeath(Handle event, const char[] name, bool dontBroadcast)
 {
-   if(GetConVarInt(Cvar_Deadtalk) != 1) //Plugin is disabled
+   if(Cvar_Deadtalk.IntValue != 1) //Plugin is disabled
    {
       return Plugin_Stop;
    }
@@ -116,7 +116,7 @@ public Action deadtalk_timer(Handle timer, any client)
 
    CPrintToChat(client, "{orchid}Deadtalk: {default}Now in deadtalk. Live teammates cannot hear you, but you may talk with all other dead players.");
 
-   for(int otherClient = 1; otherClient <= GetClientCount(true); otherClient++)
+   for(int otherClient = 1; otherClient <= MaxClients; otherClient++)
    {
       if(!IsClientInGame(otherClient) || otherClient == client)
       {

@@ -17,7 +17,7 @@ float CALLOUT_TIME = 5.0; //Easy change how long before a dead player is put in 
 char DEADTALK_USAGE[] = {"Type \"!dt\" | \"!deadt\" <(on/1) | (off/0)> to change your deadtalk preference"};
 char DTNOTIF_USAGE[] = {"Type \"!dtn\" or \"!deadt_notif\" to toggle deadtalk notifications"};
 
-Handle Cvar_Deadtalk = INVALID_HANDLE; //Stores if plugin is enabled
+ConVar Cvar_Deadtalk; //Stores if plugin is enabled
 Handle DeadtalkCookie; //Stores the client preference cookie for deadtalk
 Handle DTNotifCookie; //Stores the client notification cookie for deadtalk
 
@@ -59,7 +59,7 @@ public void OnEventShutdown()
 
 public Action DeadtalkToggle(int client, int args)
 {
-   if(GetConVarInt(Cvar_Deadtalk) != 1)
+   if(Cvar_Deadtalk.IntValue != 1)
    {
       return Plugin_Stop;
    }
@@ -194,7 +194,7 @@ public Action DeadtalkToggle(int client, int args)
 
 public Action ToggleNotifications(int client, int args)
 {
-   if(GetConVarInt(Cvar_Deadtalk) != 1)
+   if(Cvar_Deadtalk.IntValue != 1)
    {
       return Plugin_Stop;
    }
@@ -239,7 +239,7 @@ public Action ToggleNotifications(int client, int args)
 
 public Action Event_PlayerSpawn(Handle event, const char[] name, bool dontBroadcast)
 {
-   if(GetConVarInt(Cvar_Deadtalk) != 1) //Plugin is disabled
+   if(Cvar_Deadtalk.IntValue != 1) //Plugin is disabled
    {
       return Plugin_Stop;
    }
@@ -262,7 +262,7 @@ public Action Event_PlayerSpawn(Handle event, const char[] name, bool dontBroadc
    }
 
    //loop through every other client in server
-   for(int otherClient = 1; otherClient <= GetClientCount(true); otherClient++)
+   for(int otherClient = 1; otherClient <= MaxClients; otherClient++)
    {
       if(!IsClientInGame(otherClient) || client == otherClient)
       {
@@ -289,7 +289,7 @@ public Action Event_PlayerSpawn(Handle event, const char[] name, bool dontBroadc
 
 public Action Event_PlayerDeath(Handle event, const char[] name, bool dontBroadcast)
 {
-   if(GetConVarInt(Cvar_Deadtalk) != 1) //Plugin is disabled
+   if(Cvar_Deadtalk.IntValue != 1) //Plugin is disabled
    {
       return Plugin_Stop;
    }
@@ -316,7 +316,7 @@ public Action Event_PlayerDeath(Handle event, const char[] name, bool dontBroadc
       }
 
       //Make sure client cant hear dead teammates with deadtalk on
-      for(int i = 1; i < GetClientCount(true); i++)
+      for(int i = 1; i < MaxClients; i++)
       {
          if(IsClientInGame(i) && !IsPlayerAlive(i) && getDeadtalkPrefs(i) == 1)
          {
@@ -368,7 +368,7 @@ public Action deadtalk_timer(Handle timer, any client)
       CPrintToChat(client, "{orchid}Deadtalk: {default}Deadtalk started.");
    }
 
-   for(int otherClient = 1; otherClient <= GetClientCount(true); otherClient++)
+   for(int otherClient = 1; otherClient <= MaxClients; otherClient++)
    {
       if(!IsClientInGame(otherClient) || otherClient == client)
       {
